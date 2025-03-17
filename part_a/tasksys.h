@@ -2,6 +2,11 @@
 #define _TASKSYS_H
 
 #include "itasksys.h"
+#include <mutex>
+#include <queue>
+#include <thread>
+#include <atomic>
+#include <condition_variable>
 
 /*
  * TaskSystemSerial: This class is the student's implementation of a
@@ -26,6 +31,8 @@ class TaskSystemSerial: public ITaskSystem {
  * of the ITaskSystem interface.
  */
 class TaskSystemParallelSpawn: public ITaskSystem {
+    private:
+        int num_threads;
     public:
         TaskSystemParallelSpawn(int num_threads);
         ~TaskSystemParallelSpawn();
@@ -43,6 +50,16 @@ class TaskSystemParallelSpawn: public ITaskSystem {
  * documentation of the ITaskSystem interface.
  */
 class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
+    private:
+        std::vector<std::thread> threads;
+        std::mutex queue_mutex;
+        std::atomic<int> task_remaining{};
+        std::queue<int> task_queue;
+        IRunnable *runnables{};
+        bool exit_flag;
+        int num_of_total_tasks{};
+
+        void workerLoop();
     public:
         TaskSystemParallelThreadPoolSpinning(int num_threads);
         ~TaskSystemParallelThreadPoolSpinning();
@@ -60,6 +77,19 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
  * itasksys.h for documentation of the ITaskSystem interface.
  */
 class TaskSystemParallelThreadPoolSleeping: public ITaskSystem {
+    private:
+        std::vector<std::thread> threads;
+        std::mutex queue_mutex;
+        std::mutex counter_lock;
+        std::condition_variable counter_cond;
+        std::condition_variable queue_cond;
+        std::atomic<int> task_remaining{};
+        std::queue<int> task_queue;
+        IRunnable *runnables{};
+        bool exit_flag;
+        int num_of_total_tasks{};
+
+        void workerLoop();
     public:
         TaskSystemParallelThreadPoolSleeping(int num_threads);
         ~TaskSystemParallelThreadPoolSleeping();
