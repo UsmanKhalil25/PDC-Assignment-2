@@ -18,6 +18,7 @@ class IRunnable {
              task launch.
          */
         virtual void runTask(int task_id, int num_total_tasks) = 0;
+        int total_tasks;
 };
 
 class ITaskSystem {
