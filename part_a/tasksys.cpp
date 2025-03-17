@@ -234,7 +234,7 @@ void TaskSystemParallelThreadPoolSpinning::sync() {
 }
 
 TaskSystemParallelThreadPoolSleeping::TaskSystemParallelThreadPoolSleeping(int num_threads)
-    : ITaskSystem(num_threads), num_threads(num_threads),
+    : ITaskSystem(num_threads),
       current_runnable(nullptr), total_tasks(0), next_task(0), tasks_completed(0),
       running(false), shutdown(false)
 {

@@ -91,7 +91,6 @@ class TaskSystemParallelThreadPoolSleeping: public ITaskSystem {
     private:
         void worker_thread();
 
-        int num_threads;
         std::vector<std::thread> workers;
 
         // Shared state
