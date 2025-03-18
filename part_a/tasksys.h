@@ -30,6 +30,7 @@ class TaskSystemSerial: public ITaskSystem {
  * call.  See definition of ITaskSystem in itasksys.h for documentation
  * of the ITaskSystem interface.
  */
+
 class TaskSystemParallelSpawn: public ITaskSystem {
     private:
         int num_threads;
@@ -51,15 +52,25 @@ class TaskSystemParallelSpawn: public ITaskSystem {
  */
 class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
     private:
-        std::vector<std::thread> threads;
-        std::mutex queue_mutex;
-        std::atomic<int> task_remaining{};
-        std::queue<int> task_queue;
-        IRunnable *runnables{};
-        bool exit_flag;
-        int num_of_total_tasks{};
-
-        void workerLoop();
+        int num_threads;
+        std::vector<std::thread> workers;
+        
+        // Shared state between threads
+        std::mutex mutex;
+        IRunnable* current_runnable;
+        int num_total_tasks;
+        std::atomic<int> next_task_id;
+        std::atomic<int> tasks_completed;
+        bool should_terminate;
+        
+        // For notifying the main thread when all tasks are done
+        std::mutex completion_mutex;
+        std::condition_variable completion_cv;
+        bool all_tasks_completed;
+        
+        // Worker thread function
+        void worker_thread_func();
+            
     public:
         TaskSystemParallelThreadPoolSpinning(int num_threads);
         ~TaskSystemParallelThreadPoolSpinning();
@@ -78,18 +89,21 @@ class TaskSystemParallelThreadPoolSpinning: public ITaskSystem {
  */
 class TaskSystemParallelThreadPoolSleeping: public ITaskSystem {
     private:
-        std::vector<std::thread> threads;
-        std::mutex queue_mutex;
-        std::mutex counter_lock;
-        std::condition_variable counter_cond;
-        std::condition_variable queue_cond;
-        std::atomic<int> task_remaining{};
-        std::queue<int> task_queue;
-        IRunnable *runnables{};
-        bool exit_flag;
-        int num_of_total_tasks{};
+        void worker_thread();
 
-        void workerLoop();
+        int num_threads;
+        std::vector<std::thread> workers;
+
+        // Shared state
+        std::mutex mtx;
+        std::condition_variable cv_task;       // to wake up worker threads when new tasks are available
+        std::condition_variable cv_completion; // to wake up the main thread when tasks complete
+        IRunnable* current_runnable;
+        int total_tasks;
+        int next_task;
+        int tasks_completed;
+        bool running;   // indicates a run() is in progress
+        bool shutdown;  //
     public:
         TaskSystemParallelThreadPoolSleeping(int num_threads);
         ~TaskSystemParallelThreadPoolSleeping();
